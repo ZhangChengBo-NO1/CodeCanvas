@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note-taking App</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .note {
+            transition: all 0.3s ease;
+        }
+        .note:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center">Note-taking App</h1>
+        
+        <div class="mb-6">
+            <div class="flex gap-2">
+                <input type="text" id="noteInput" placeholder="Enter your note..." class="flex-grow p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500">
+                <button id="addNoteBtn" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+        
+        <div id="notesList" class="space-y-3">
+            <!-- Notes will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const noteInput = document.getElementById('noteInput');
+            const addNoteBtn = document.getElementById('addNoteBtn');
+            const notesList = document.getElementById('notesList');
+            
+            // Load notes from localStorage
+            function loadNotes() {
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                notesList.innerHTML = '';
+                notes.forEach((note, index) => {
+                    const noteElement = document.createElement('div');
+                    noteElement.className = 'note p-4 bg-gray-800 rounded-lg flex justify-between items-center';
+                    noteElement.innerHTML = `
+                        <span>${note.text}</span>
+                        <div class="flex gap-2">
+                            <button onclick="deleteNote(${index})" class="p-2 text-red-500 hover:bg-red-900 rounded-full transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button onclick="toggleComplete(${index})" class="p-2 ${note.completed ? 'text-green-500' : 'text-gray-400'} hover:bg-gray-700 rounded-full transition-colors">
+                                <i class="fas ${note.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            </button>
+                        </div>
+                    `;
+                    notesList.appendChild(noteElement);
+                });
+            }
+            
+            // Add a new note
+            addNoteBtn.addEventListener('click', function() {
+                const noteText = noteInput.value.trim();
+                if (noteText !== '') {
+                    const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                    notes.push({ text: noteText, completed: false });
+                    localStorage.setItem('notes', JSON.stringify(notes));
+                    noteInput.value = '';
+                    loadNotes();
+                }
+            });
+            
+            // Delete a note
+            window.deleteNote = function(index) {
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                notes.splice(index, 1);
+                localStorage.setItem('notes', JSON.stringify(notes));
+                loadNotes();
+            };
+            
+            // Toggle note completion
+            window.toggleComplete = function(index) {
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                notes[index].completed = !notes[index].completed;
+                localStorage.setItem('notes', JSON.stringify(notes));
+                loadNotes();
+            };
+            
+            // Initial load
+            loadNotes();
+        });
+    </script>
+</body>
+</html>

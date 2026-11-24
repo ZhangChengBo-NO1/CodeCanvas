@@ -26,26 +26,30 @@ func (p *PreviewServer) Parameters() map[string]any {
 }
 
 func (p *PreviewServer) Execute(ctx context.Context, raw json.RawMessage) (string, error) {
-	// 如果服务器已经在运行，直接返回 URL
 	if p.URL != "" {
 		return fmt.Sprintf("预览服务器已在运行: %s", p.URL), nil
 	}
 
-	// 动态分配一个空闲端口（监听 0 端口）
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", fmt.Errorf("启动端口失败: %w", err)
 	}
 	p.URL = "http://" + ln.Addr().String()
 
-	// 挂载静态文件服务
-	p.srv = &http.Server{
-		Handler: http.FileServer(http.Dir(p.Root)),
-	}
+	// 不要在这里打印任何东西！
+	fs := http.FileServer(http.Dir(p.Root))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fs.ServeHTTP(w, r) // 纯静默处理，不要 fmt.Printf
+	})
 
-	// 后台协程运行服务器
+	p.srv = &http.Server{Handler: mux}
+
+
 	go func() {
-		p.srv.Serve(ln)
+		if err := p.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("❌ [预览服务器] 异常退出: %v\n", err)
+		}
 	}()
 
 	return fmt.Sprintf("✅ 预览服务已启动。用户可以通过浏览器访问: %s", p.URL), nil
